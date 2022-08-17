@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.SaleListMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.SaleList">
+        <id column="id" property="id" />
+        <result column="amount_paid" property="amountPaid" />
+        <result column="amount_payable" property="amountPayable" />
+        <result column="remarks" property="remarks" />
+        <result column="sale_date" property="saleDate" />
+        <result column="sale_number" property="saleNumber" />
+        <result column="state" property="state" />
+        <result column="user_id" property="userId" />
+        <result column="customer_id" property="customerId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, amount_paid, amount_payable, remarks, sale_date, sale_number, state, user_id, customer_id
+    </sql>
+    <select id="getNextSaleNumber" resultType="java.lang.String">
+        select max(sale_number) as saleNumber
+        from t_sale_list
+        where to_days(sale_date) = to_days(now())
+    </select>
+
+
+    <select id="saleList" resultType="com.px.admin.pojo.SaleList">
+        SELECT
+        sl.*,
+        u.user_name AS userName,
+        c.NAME AS customerName
+        FROM
+        t_sale_list sl
+        LEFT JOIN t_user u ON sl.user_id = u.id
+        LEFT JOIN t_customer c ON sl.customer_id = c.id
+        <where>
+            <if test="null !=saleListQuery.saleNumber and saleListQuery.saleNumber !='' ">
+                sl.sale_number =#{saleListQuery.saleNumber}
+            </if>
+            <if test="null !=saleListQuery.customerId">
+                and sl.customer_id=#{saleListQuery.customerId}
+            </if>
+            <if test="null !=saleListQuery.state">
+                and sl.state = #{saleListQuery.state}
+            </if>
+            <if test="null != saleListQuery.startDate and saleListQuery.startDate !='' ">
+                and sale_date &gt;= #{saleListQuery.startDate}
+            </if>
+            <if test="null !=saleListQuery.endDate and saleListQuery.endDate !='' ">
+                and sale_date &lt;= #{saleListQuery.endDate}
+            </if>
+
+        </where>
+    </select>
+    <select id="countSaleTotal" resultType="java.lang.Long">
+        select
+        count(*)
+        from t_sale_list sl
+        LEFT JOIN t_customer c on sl.customer_id = c.id
+        left join t_sale_list_goods plg on sl.id = plg.sale_list_id
+        LEFT JOIN t_goods_type gt on plg.type_id = gt.id
+        <where>
+            <if test="null != saleListQuery.startDate and saleListQuery.startDate !='' ">
+                and sale_date &gt;=#{saleListQuery.startDate}
+            </if>
+            <if test="null !=saleListQuery.endDate and saleListQuery.endDate !='' ">
+                and sale_date &lt;=#{saleListQuery.endDate}
+            </if>
+            <if test="null != saleListQuery.goodsName and saleListQuery.goodsName !='' ">
+                and
+                (
+                plg.name like concat('%',#{saleListQuery.goodsName},'%') or plg.code =#{saleListQuery.goodsName}
+                )
+            </if>
+            <if test="null !=saleListQuery.typeIds and saleListQuery.typeIds.size>0">
+                and plg.type_id in
+                <foreach collection="saleListQuery.typeIds" item="typeId" open="(" separator="," close=")">
+                    #{typeId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+    <select id="saleListQueryList" resultType="com.px.admin.model.CountResultModel">
+        select
+        sl.sale_number as number,
+        sl.sale_date as date,
+        c.`name` as name,
+        plg.`code`,
+        plg.`name` as goodsName,
+        plg.model,
+        plg.unit as unitName,
+        plg.price,
+        plg.num,
+        plg.total,
+        gt.`name` as typeName
+        from t_sale_list sl
+        LEFT JOIN t_customer c on sl.customer_id = c.id
+        left join t_sale_list_goods plg on sl.id = plg.sale_list_id
+        LEFT JOIN t_goods_type gt on plg.type_id = gt.id
+        <where>
+            <if test="null != saleListQuery.startDate and saleListQuery.startDate !='' ">
+                and sale_date &gt;=#{saleListQuery.startDate}
+            </if>
+            <if test="null !=saleListQuery.endDate and saleListQuery.endDate !='' ">
+                and sale_date &lt;=#{saleListQuery.endDate}
+            </if>
+            <if test="null != saleListQuery.goodsName and saleListQuery.goodsName !='' ">
+                and
+                (
+                plg.name like concat('%',#{saleListQuery.goodsName},'%') or plg.code =#{saleListQuery.goodsName}
+                )
+            </if>
+            <if test="null !=saleListQuery.typeIds and saleListQuery.typeIds.size>0">
+                and plg.type_id in
+                <foreach collection="saleListQuery.typeIds" item="typeId" open="(" separator="," close=")">
+                    #{typeId}
+                </foreach>
+            </if>
+        </where>
+        limit  #{saleListQuery.index},#{saleListQuery.limit}
+    </select>
+
+
+    <select id="countDaySale" resultType="java.util.Map">
+        select
+        <!--成本金额-->
+        sum(t3.purchasing_price * t1.num) as amountCost,
+        <!--销售金额-->
+        sum(t1.price * t1.num) as amountSale,
+        t2.sale_date as saleDate
+        from
+        t_sale_list_goods t1
+        LEFT JOIN t_sale_list t2 on t1.sale_list_id = t2.id
+        LEFT JOIN t_goods t3 on t1.goods_id =t3.id
+        where t2.sale_date BETWEEN #{begin}	 and #{end}
+        GROUP BY t2.sale_date
+    </select>
+
+    <select id="countMonthSale" resultType="java.util.Map">
+        select
+            sum(t3.purchasing_price * t1.num) as amountCost,
+            sum(t1.price * t1.num) as amountSale,
+            DATE_FORMAT(t2.sale_date,"%Y-%m") as saleDate
+        from
+            t_sale_list_goods t1
+                LEFT JOIN t_sale_list t2 on t1.sale_list_id = t2.id
+                LEFT JOIN t_goods t3 on t1.goods_id =t3.id
+        where DATE_FORMAT(t2.sale_date,"%Y-%m") BETWEEN #{begin}	and #{end}
+        GROUP BY DATE_FORMAT(t2.sale_date,"%Y-%m")
+    </select>
+
+</mapper>

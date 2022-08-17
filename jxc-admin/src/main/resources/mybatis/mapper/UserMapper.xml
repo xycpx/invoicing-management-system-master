@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.UserMapper">
+
+<!--     通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.User">
+        <id column="id" property="id" />
+        <result column="bz" property="bz" />
+        <result column="password" property="password" />
+        <result column="true_name" property="trueName" />
+        <result column="user_name" property="userName" />
+        <result column="remarks" property="remarks" />
+        <result column="is_del" property="isDel" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+<select id="listuser" resultMap="BaseResultMap">
+    select * from t_user
+</select>
+<select id="oneUser" parameterType="string" resultMap="BaseResultMap">
+    select * from t_user where user_name=#{username}
+</select>
+    <update id="updateUserInfo"  >
+        update t_user set user_name=#{user.userName},bz=#{user.bz},true_name=#{user.trueName},remarks=#{user.remarks} where id=#{user.id}
+    </update>
+    <update id="updateUserList"  >
+        update t_user set user_name=#{user.userName},bz=#{user.bz},true_name=#{user.trueName},remarks=#{user.remarks},is_del=#{user.isDel} where id=#{user.id}
+    </update>
+    <select id="queryById" parameterType="int" resultMap="BaseResultMap">
+        select * from t_user where id=#{id}
+    </select>
+    <update id="updateUserPasswordById">
+        update t_user set password=#{newPassword} where id=#{id}
+    </update>
+    <select id="queryExUser" resultMap="BaseResultMap">
+        select * from t_user
+            <where>
+                is_del=0
+               <if test="username!=null and username!=''">
+                  and user_name=#{username}
+               </if>
+            </where>
+    </select>
+    <insert id="insertUser" >
+         insert into t_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="user.id!=null and user.id!=''">
+                id,
+            </if>
+            <if test="user.username!=null and user.username!=''">
+                user_name,
+            </if>
+            <if test="user.bz!=null and user.bz!=''">
+                bz,
+            </if>
+            <if test="user.password!=null and user.password!=''">
+                password,
+            </if>
+            <if test="user.trueName!=null and user.trueName!=''">
+                true_name,
+            </if>
+            <if test="user.remarks!=null and user.remarks!=''">
+                remarks,
+            </if>
+            <if test="user.isDel!=null and user.isDel!=''">
+                is_del,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="user.id!=null and user.id!=''">
+                #{user.id},
+            </if>
+            <if test="user.username!=null and user.username!=''">
+                #{user.username},
+            </if>
+            <if test="user.bz!=null and user.bz!=''">
+                #{user.bz},
+            </if>
+            <if test="user.password!=null and user.password!=''">
+                #{user.password},
+            </if>
+            <if test="user.trueName!=null and user.trueName!=''">
+                #{user.trueName},
+            </if>
+            <if test="user.remarks!=null and user.remarks!=''">
+                #{user.remarks},
+            </if>
+            <if test="user.isDel!=null and user.isDel!=''">
+                #{isDel},
+            </if>
+        </trim>
+    </insert>
+    <delete id="deleteUser">
+        delete from t_user where id=#{id}
+    </delete>
+</mapper>

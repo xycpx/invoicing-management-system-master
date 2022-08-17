@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.ReturnListMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.ReturnList">
+        <id column="id" property="id" />
+        <result column="amount_paid" property="amountPaid" />
+        <result column="amount_payable" property="amountPayable" />
+        <result column="remarks" property="remarks" />
+        <result column="return_date" property="returnDate" />
+        <result column="return_number" property="returnNumber" />
+        <result column="state" property="state" />
+        <result column="supplier_id" property="supplierId" />
+        <result column="user_id" property="userId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, amount_paid, amount_payable, remarks, return_date, return_number, state, supplier_id, user_id
+    </sql>
+    <select id="getNextReturnNumber" resultType="java.lang.String">
+        select max(return_number) as returnNumber
+        from t_return_list
+        where to_days(return_date) = to_days(now())
+    </select>
+    <select id="returnList" resultType="com.px.admin.pojo.ReturnList">
+        SELECT
+            tl.*,
+            u.user_name AS userName,
+            s.NAME AS supplierName
+            FROM
+                t_return_list tl
+                LEFT JOIN t_user u ON tl.user_id = u.id
+                LEFT JOIN t_supplier s ON tl.supplier_id = s.id
+        <where>
+            <if test="null !=returnListQuery.returnNumber and returnListQuery.returnNumber !='' ">
+                tl.return_number =#{returnListQuery.returnNumber}
+            </if>
+            <if test="null !=returnListQuery.supplierId">
+                and tl.supplier_id=#{returnListQuery.supplierId}
+            </if>
+            <if test="null !=returnListQuery.state">
+                and tl.state = #{returnListQuery.state}
+            </if>
+            <if test="null != returnListQuery.startDate and returnListQuery.startDate !='' ">
+                and return_date &gt;=#{returnListQuery.startDate}
+            </if>
+            <if test="null !=returnListQuery.endDate and returnListQuery.endDate !='' ">
+                and return_date &lt;=#{returnListQuery.endDate}
+            </if>
+
+        </where>
+    </select>
+
+</mapper>

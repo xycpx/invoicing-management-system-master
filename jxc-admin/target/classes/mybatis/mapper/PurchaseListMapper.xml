@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.PurchaseListMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.PurchaseList">
+        <id column="id" property="id" />
+        <result column="amount_paid" property="amountPaid" />
+        <result column="amount_payable" property="amountPayable" />
+        <result column="purchase_date" property="purchaseDate" />
+        <result column="remarks" property="remarks" />
+        <result column="state" property="state" />
+        <result column="purchase_number" property="purchaseNumber" />
+        <result column="supplier_id" property="supplierId" />
+        <result column="user_id" property="userId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, amount_paid, amount_payable, purchase_date, remarks, state, purchase_number, supplier_id, user_id
+    </sql>
+
+
+    <select id="getNextPurchaseNumber" resultType="java.lang.String">
+        select max(purchase_number) as purchaseNumber
+        from t_purchase_list
+        where to_days(purchase_date) = to_days(now())
+    </select>
+    <select id="purchaseList" resultType="com.px.admin.pojo.PurchaseList">
+        SELECT
+            pl.*,
+            u.user_name AS userName,
+            s.NAME AS supplierName
+        FROM
+            t_purchase_list pl
+            LEFT JOIN t_user u ON pl.user_id = u.id
+            LEFT JOIN t_supplier s ON pl.supplier_id = s.id
+        <where>
+             <if test="null !=purchaseListQuery.purchaseNumber and purchaseListQuery.purchaseNumber !='' ">
+                 pl.purchase_number =#{purchaseListQuery.purchaseNumber}
+             </if>
+             <if test="null !=purchaseListQuery.supplierId">
+                 and pl.supplier_id=#{purchaseListQuery.supplierId}
+             </if>
+             <if test="null !=purchaseListQuery.state">
+                 and pl.state = #{purchaseListQuery.state}
+             </if>
+             <if test="null != purchaseListQuery.startDate and purchaseListQuery.startDate !='' ">
+                 and purchase_date &gt;=#{purchaseListQuery.startDate}
+             </if>
+            <if test="null !=purchaseListQuery.endDate and purchaseListQuery.endDate !='' ">
+                and purchase_date &lt;=#{purchaseListQuery.endDate}
+            </if>
+
+        </where>
+
+    </select>
+
+
+    <select id="countPurchaseTotal" resultType="java.lang.Long">
+        select
+          count(*)
+        from t_purchase_list pl
+           LEFT JOIN t_supplier s on pl.supplier_id = s.id
+             left join t_purchase_list_goods plg on pl.id = plg.purchase_list_id
+             LEFT JOIN t_goods_type gt on plg.type_id = gt.id
+        <where>
+            <if test="null != purchaseListQuery.startDate and purchaseListQuery.startDate !='' ">
+                and purchase_date &gt;= #{purchaseListQuery.startDate}
+            </if>
+            <if test="null !=purchaseListQuery.endDate and purchaseListQuery.endDate !='' ">
+                and purchase_date &lt;= #{purchaseListQuery.endDate}
+            </if>
+            <if test="null != purchaseListQuery.goodsName and purchaseListQuery.goodsName !='' ">
+                and
+                (
+                plg.name like concat('%',#{purchaseListQuery.goodsName},'%') or plg.code =#{purchaseListQuery.goodsName}
+                )
+            </if>
+            <if test="null !=purchaseListQuery.typeIds and purchaseListQuery.typeIds.size>0">
+                and plg.type_id in
+                <foreach collection="purchaseListQuery.typeIds" item="typeId" open="(" separator="," close=")">
+                    #{typeId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+    <select id="countPurchaseList" resultType="com.px.admin.model.CountResultModel">
+        select
+          pl.purchase_number as number,
+            pl.purchase_date as date,
+            s.`name` as name,
+            plg.`code`,
+            plg.`name` as goodsName,
+            plg.model,
+            plg.unit as unitName,
+            plg.price,
+            plg.num,
+            plg.total,
+            gt.`name` as typeName
+        from t_purchase_list pl
+           LEFT JOIN t_supplier s on pl.supplier_id = s.id
+             left join t_purchase_list_goods plg on pl.id = plg.purchase_list_id
+             LEFT JOIN t_goods_type gt on plg.type_id = gt.id
+        <where>
+            <if test="null != purchaseListQuery.startDate and purchaseListQuery.startDate !='' ">
+                and purchase_date &gt;=#{purchaseListQuery.startDate}
+            </if>
+            <if test="null !=purchaseListQuery.endDate and purchaseListQuery.endDate !='' ">
+                and purchase_date &lt;=#{purchaseListQuery.endDate}
+            </if>
+            <if test="null != purchaseListQuery.goodsName and purchaseListQuery.goodsName !='' ">
+                and
+                 (
+                   plg.name like concat('%',#{purchaseListQuery.goodsName},'%') or plg.code =#{purchaseListQuery.goodsName}
+                 )
+            </if>
+            <if test="null !=purchaseListQuery.typeIds and purchaseListQuery.typeIds.size>0">
+                and plg.type_id in
+                <foreach collection="purchaseListQuery.typeIds" item="typeId" open="(" separator="," close=")">
+                    #{typeId}
+                </foreach>
+            </if>
+        </where>
+
+        limit  #{purchaseListQuery.index},#{purchaseListQuery.limit}
+    </select>
+
+
+</mapper>

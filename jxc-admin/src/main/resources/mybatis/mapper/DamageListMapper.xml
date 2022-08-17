@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.DamageListMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.DamageList">
+        <id column="id" property="id" />
+        <result column="damage_date" property="damageDate" />
+        <result column="damage_number" property="damageNumber" />
+        <result column="remarks" property="remarks" />
+        <result column="user_id" property="userId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, damage_date, damage_number, remarks, user_id
+    </sql>
+    <select id="getNextDamageNumber" resultType="java.lang.String">
+        select max(damage_number) as damageNumber
+        from t_damage_list
+        where to_days(damage_date) = to_days(now())
+    </select>
+    <select id="damageList" resultType="com.px.admin.pojo.DamageList">
+        select
+           dl.*,
+           u.user_name as userName
+        from t_damage_list dl
+          left join t_user u on dl.user_id = u.id
+         <where>
+             <if test="null != damageListQuery.startDate and damageListQuery.startDate !='' ">
+                 and damage_date &gt;= #{damageListQuery.startDate}
+             </if>
+             <if test="null !=damageListQuery.endDate and damageListQuery.endDate !='' ">
+                 and damage_date &lt;= #{damageListQuery.endDate}
+             </if>
+         </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.RoleMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.Role">
+        <id column="id" property="id" />
+        <result column="bz" property="bz" />
+        <result column="name" property="name" />
+        <result column="remarks" property="remarks" />
+        <result column="is_del" property="isDel" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, bz, name, remarks, is_del
+    </sql>
+
+    <select id="queryAllRoles" parameterType="int" resultType="java.util.Map">
+      SELECT
+          r2.id,
+          r2.name AS roleName,
+          CASE
+      WHEN IFNULL(t_temp.id, 0) = 0 THEN
+          ""
+      ELSE
+          "selected"
+      END AS "selected"
+      FROM
+          t_role r2
+      LEFT JOIN (
+          SELECT
+              r1.id
+          FROM
+              t_role r1
+          LEFT JOIN t_user_role ur ON r1.id = ur.role_id
+          WHERE
+              ur.user_id = #{userId}
+      ) t_temp ON r2.id = t_temp.id
+      where r2.is_del=0
+    </select>
+
+</mapper>

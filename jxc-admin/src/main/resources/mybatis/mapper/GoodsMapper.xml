@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.GoodsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.Goods">
+        <id column="id" property="id" />
+        <result column="code" property="code" />
+        <result column="inventory_quantity" property="inventoryQuantity" />
+        <result column="min_num" property="minNum" />
+        <result column="model" property="model" />
+        <result column="name" property="name" />
+        <result column="producer" property="producer" />
+        <result column="purchasing_price" property="purchasingPrice" />
+        <result column="remarks" property="remarks" />
+        <result column="selling_price" property="sellingPrice" />
+        <result column="unit" property="unit" />
+        <result column="type_id" property="typeId" />
+        <result column="state" property="state" />
+        <result column="last_purchasing_price" property="lastPurchasingPrice" />
+        <result column="is_del" property="isDel" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, code, inventory_quantity, min_num, model, name, producer, purchasing_price, remarks, selling_price, unit, type_id, state, last_purchasing_price, is_del
+    </sql>
+    <select id="queryGoodsByParams" resultType="com.px.admin.pojo.Goods">
+        select g.*,gu.name as unitName,gt.name as typeName
+        from t_goods g left join t_goods_unit gu on g.unit = gu.id
+        left join t_goods_type gt on g.type_id = gt.id
+        <where>
+            g.is_del =0
+            <if test="null != goodsQuery.goodsName and goodsQuery.goodsName !=''">
+                and g.name like concat('%',#{goodsQuery.goodsName},'%')
+            </if>
+
+            <if test="null !=goodsQuery.type">
+                <if test="goodsQuery.type ==1 ">
+                    and inventory_quantity =0
+                </if>
+                <if test="goodsQuery.type ==2 ">
+                    and inventory_quantity  &gt; 0
+                </if>
+                <if test="goodsQuery.type ==3 ">
+                    and inventory_quantity  &lt; min_num
+                </if>
+            </if>
+
+            <if test="null !=goodsQuery.typeIds and goodsQuery.typeIds.size>0">
+                and g.type_id in
+                <foreach collection="goodsQuery.typeIds" item="typeId" open="(" separator="," close=")">
+                    #{typeId}
+                </foreach>
+            </if>
+
+
+
+
+        </where>
+
+    </select>
+
+    <select id="getGoodsInfoById" parameterType="int" resultType="com.px.admin.pojo.Goods">
+        select g.*,gt.id as typeId,gt.name as typeName,gu.name as unitName
+        from t_goods g
+        left  join t_goods_type gt on g.type_id=gt.id
+        left join t_goods_unit gu  on g.unit = gu.id
+        where g.id=#{id}
+    </select>
+
+</mapper>

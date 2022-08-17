@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.px.admin.mapper.MenuMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.px.admin.pojo.Menu">
+        <id column="id" property="id" />
+        <result column="icon" property="icon" />
+        <result column="name" property="name" />
+        <result column="state" property="state" />
+        <result column="p_id" property="pId"/>
+        <result column="acl_value" property="aclValue"/>
+        <result column="grade" property="grade"/>
+        <result column="is_del" property="isDel" />
+    </resultMap>
+
+<select id="queryAllMenu" resultType="com.px.admin.dto.TreeDto">
+    select id,name,p_id as pId from t_menu;
+</select>
+
+</mapper>
